@@ -1,10 +1,12 @@
 const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
+const adminRouter = require('./src/routes/adminRouter');
+const registerRouter = require('./src/routes/registerRouter');
 
 
 require('dotenv').config();
-
+app.use(express.static('./public'))
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
@@ -22,8 +24,11 @@ app.set('views','./src/views')
 
 
 app.get('/', (req, res) => {
-  res.send('server working');
+  res.render('login',{Message: ''});
 });
+
+app.use('/admin',adminRouter)
+app.use('/api/register',registerRouter)
 
 
 
