@@ -4,6 +4,7 @@ adminRouter.use(express.static('./public'))
 const bcrypt = require('bcryptjs');
 const loginData = require('../models/loginSchema');
 const userData = require('../models/userSchema');
+const studentData = require('../models/studentSchema');
 
 adminRouter.get('/', async (req, res) => {
     res.render('dashboard')
@@ -70,6 +71,128 @@ adminRouter.get('/view-users', async (req, res) => {
     
 })
 
+adminRouter.get('/view-rejected-students', async (req, res) => {
+    try {
+        const student = await studentData.aggregate([
+            {
+              '$lookup': {
+                'from': 'login_tbs', 
+                'localField': 'login_id', 
+                'foreignField': '_id', 
+                'as': 'login'
+              }
+            },
+            {
+                '$unwind': {
+                    'path': '$login'
+                }
+            },{
+                '$match':{
+                    'login.status':2
+                }
+            },
+            {
+                '$group': {
+                    '_id': '$_id', 
+                    'name': {
+                        '$first': '$name'
+                    }, 
+                    'mobile': {
+                        '$first': '$mobile'
+                    }, 
+                    'address': {
+                        '$first': '$address'
+                    }, 
+                    'status': {
+                        '$first': '$login.status'
+                    }, 
+                    'login_id': {
+                        '$first': '$login._id'
+                    },
+                    'email': {
+                        '$first': '$login.email'
+                    }
+                }
+            }
+          ])
+          if(student[0]){
+            const data = {}
+            res.render('view-students',{data,student})
+          }else{
+            const data = {
+                Message: 'No data found',
+            }
+            const student = []
+            return res.render('view-students', { student, data })
+          }
+          
+    } catch (error) {
+        
+    }
+    
+})
+adminRouter.get('/view-students', async (req, res) => {
+    try {
+        const student = await studentData.aggregate([
+            {
+              '$lookup': {
+                'from': 'login_tbs', 
+                'localField': 'login_id', 
+                'foreignField': '_id', 
+                'as': 'login'
+              }
+            },
+            {
+                '$unwind': {
+                    'path': '$login'
+                }
+            },{
+                '$match':{
+                    'login.status':{ '$in': [0, 1] }, 
+                    
+                }
+            },
+            {
+                '$group': {
+                    '_id': '$_id', 
+                    'name': {
+                        '$first': '$name'
+                    }, 
+                    'mobile': {
+                        '$first': '$mobile'
+                    }, 
+                    'address': {
+                        '$first': '$address'
+                    }, 
+                    'status': {
+                        '$first': '$login.status'
+                    }, 
+                    'login_id': {
+                        '$first': '$login._id'
+                    },
+                    'email': {
+                        '$first': '$login.email'
+                    }
+                }
+            }
+          ])
+          if(student[0]){
+            const data = {}
+            res.render('view-students',{data,student})
+          }else{
+            const data = {
+                Message: 'No data found',
+            }
+            const student = []
+            return res.render('view-students', { student, data })
+          }
+          
+    } catch (error) {
+        
+    }
+    
+})
+
 adminRouter.post('/login', async (req, res, next) => {
     try {
        
@@ -98,6 +221,63 @@ adminRouter.post('/login', async (req, res, next) => {
 
     }
 });
+
+adminRouter.get('/delete-student/:login_id', async (req, res) => {
+    try {
+        const id = req.params.login_id
+        const deletedata = await studentData.deleteOne({ login_id: id })
+        if (deletedata.deletedCount == 1) {
+            const deletedata = await loginData.deleteOne({_id: id })
+            return res.redirect('/admin/view-students')
+        } else {
+            return res.redirect('/admin/view-students')
+        }
+    } catch (error) {
+        return res.redirect('/admin/view-students')
+    }
+})
+
+adminRouter.get('/update-student/:login_id', async (req, res) => {
+    try {
+        const id = req.params.login_id
+        const update = await loginData.updateOne({ _id: id }, { $set: { status: 1 } })
+        if (update.modifiedCount == 1) {
+            return res.redirect('/admin/view-students')
+        } else {
+            return res.redirect('/admin/view-students')
+        }
+    } catch (error) {
+        return res.redirect('/admin/view-students')
+    }
+})
+
+adminRouter.get('/restore-student/:login_id', async (req, res) => {
+    try {
+        const id = req.params.login_id
+        const update = await loginData.updateOne({ _id: id }, { $set: { status: 1 } })
+        if (update.modifiedCount == 1) {
+            return res.redirect('/admin/view-students')
+        } else {
+            return res.redirect('/admin/view-students')
+        }
+    } catch (error) {
+        return res.redirect('/admin/view-students')
+    }
+})
+
+adminRouter.get('/reject-student/:login_id', async (req, res) => {
+    try {
+        const id = req.params.login_id
+        const update = await loginData.updateOne({ _id: id }, { $set: { status: 2 } })
+        if (update.modifiedCount == 1) {
+            return res.redirect('/admin/view-rejected-students')
+        } else {
+            return res.redirect('/admin/view-rejected-students')
+        }
+    } catch (error) {
+        return res.redirect('/admin/view-rejected-students')
+    }
+})
 
 
 
