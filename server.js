@@ -3,6 +3,8 @@ const app = express();
 const mongoose = require('mongoose');
 const adminRouter = require('./src/routes/adminRouter');
 const registerRouter = require('./src/routes/registerRouter');
+const studentRouter = require('./src/routes/studentRouter');
+const userRouter = require('./src/routes/userRouter');
 
 
 require('dotenv').config();
@@ -29,6 +31,8 @@ app.get('/', (req, res) => {
 
 app.use('/admin',adminRouter)
 app.use('/api/register',registerRouter)
+app.use('/api/student',studentRouter)
+app.use('/api/user',userRouter)
 
 
 

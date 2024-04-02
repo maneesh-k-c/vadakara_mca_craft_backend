@@ -13,7 +13,7 @@ try {
         description: req.body.description,
         image: req.files ? req.files.map((file) => file.path) : null,
         quantity: req.body.quantity,
-        highlight_status:req.body.highlight_status,
+        highlight_status:0,
         status:0
     };
     const result = await productData(product_data).save();
@@ -141,7 +141,7 @@ try {
 }
 });
 
-studentRouter.get('/update-product/:product_id', async (req, res, next) => {
+studentRouter.post('/update-product/:product_id', async (req, res, next) => {
     try {
       const objectId = req.params.product_id;
       const previousData = await productData.findOne({
