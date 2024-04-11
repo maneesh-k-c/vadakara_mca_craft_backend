@@ -1,9 +1,25 @@
 const express = require('express');
 const studentRouter = express.Router();
 const productData = require('../models/productSchema');
+const multer = require('multer');
+const { default: mongoose } = require('mongoose');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+require('dotenv').config();
+cloudinary.config({
+    cloud_name: process.env.CLOUD_NAME,
+    api_key: process.env.CLOUD_KEY,
+    api_secret: process.env.CLOUD_SECRET,
+});
+const storageImage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'craft',
+    },
+});
+const uploadImage = multer({ storage: storageImage });
 
-
-studentRouter.post('/add-product', async (req, res, next) => {
+studentRouter.post('/add-product',uploadImage.array('image', 1), async (req, res, next) => {
 try {
     
     let product_data = {
