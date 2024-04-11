@@ -6,28 +6,28 @@ const orderData = require('../models/orderSchema');
 const { default: mongoose } = require('mongoose');
 
 userRouter.get('/view-product-highlights/', async (req, res, next) => {
-try {
-    const Data = await productData.find({highlight_status:1});
-    if (Data[0]) {
-    return res.status(200).json({
-        Success: true,
-        Error: false,
-        data: Data,
-    });
-    }else{
-    return res.status(400).json({
-        Success: false,
-        Error: true,
-        Message: 'No data found',
-    });
-    } 
-} catch (error) {
-    return res.json({
-        Success: false,
-        Error: true,
-        Message: 'Something went wrong',
-    });
-}
+    try {
+        const Data = await productData.find({ highlight_status: 1 });
+        if (Data[0]) {
+            return res.status(200).json({
+                Success: true,
+                Error: false,
+                data: Data,
+            });
+        } else {
+            return res.status(400).json({
+                Success: false,
+                Error: true,
+                Message: 'No data found',
+            });
+        }
+    } catch (error) {
+        return res.json({
+            Success: false,
+            Error: true,
+            Message: 'Something went wrong',
+        });
+    }
 });
 
 userRouter.post('/update-user-profile/:id', async (req, res) => {
@@ -68,18 +68,18 @@ userRouter.post('/add-to-cart/:login_id/:product_id', async (req, res) => {
     try {
         const login_id = req.params.login_id;
         const product_id = req.params.product_id;
-        
+
         const existingProduct = await orderData.findOne({
             product_id: product_id,
             login_id: login_id,
-            status:"pending"
+            status: "pending"
         });
         console.log(existingProduct);
-        const product_price = await productData.findOne({ _id: product_id})
+        const product_price = await productData.findOne({ _id: product_id })
         if (existingProduct) {
-            console.log("hi",product_price);
+            console.log("hi", product_price);
             const quantity = existingProduct.quantity;
-            
+
             const updatedQuantity = Number(quantity) + 1;
             console.log(updatedQuantity);
             const sub = updatedQuantity * Number(product_price.price)
@@ -134,11 +134,11 @@ userRouter.post('/update-cart-quantity/:_id', async (req, res) => {
         const existingProduct = await orderData.findOne({
             _id: id,
         });
-        const pro = await productData.findOne({_id:existingProduct.product_id})
+        const pro = await productData.findOne({ _id: existingProduct.product_id })
         const sub = Number(quantity) * Number(pro.price)
         console.log(sub);
         const updatedData = await orderData.updateOne(
-            { _id:id },
+            { _id: id },
 
             { $set: { quantity: quantity, total: sub } }
         );
@@ -217,10 +217,10 @@ userRouter.get('/view-cart/:id', async (req, res) => {
         if (product[0]) {
             var total = 0
             product.forEach((item) => {
-              total += Number(item.total);
+                total += Number(item.total);
             });
             return res.status(200).json({
-                totalAmount:total,
+                totalAmount: total,
                 Success: true,
                 Error: false,
                 data: product,
@@ -242,5 +242,73 @@ userRouter.get('/view-cart/:id', async (req, res) => {
     }
 
 })
+
+userRouter.get('/delete-cart/:id', async (req, res, next) => {
+    try {
+        const id = req.params.id
+        const deleteData = await orderData.deleteOne({ _id: id });
+        if (deleteData.deletedCount == 1) {
+            return res.status(200).json({
+                Success: true,
+                Error: false,
+                Message: 'Data removed from cart',
+            });
+        } else {
+            return res.status(400).json({
+                Success: false,
+                Error: true,
+                Message: 'Failed to delete',
+            });
+        }
+    } catch (error) {
+        return res.json({
+            Success: false,
+            Error: true,
+            Message: 'Something went wrong',
+        });
+    }
+});
+
+userRouter.post('/order-product/:login_id', async (req, res) => {
+    try {
+        const login_id = req.params.login_id;
+
+        const existingProduct = await orderData.find({
+            status: 'pending',
+            login_id: login_id,
+        });
+        console.log(existingProduct);
+        const datas = [];
+        if (existingProduct[0]) {
+            for (let i = 0; i < existingProduct.length; i++) {
+
+                const old_id = existingProduct[i]._id
+                const update = await orderData.updateOne({ _id: old_id }, { status: "orderPlaced" })
+                return res.status(200).json({
+                    Success: true,
+                    Error: false,
+                    Message: 'Order placed',
+                });
+            }
+        }
+        else {
+            return res.status(400).json({
+                Success: false,
+                Error: true,
+                Message: 'Failed to order',
+
+            });
+        }
+    } catch (error) {
+        return res.status(500).json({
+            Success: false,
+            Error: true,
+            Message: 'Internal Server error',
+            ErrorMessage: error.message,
+        });
+    }
+});
+
+
 
 module.exports = userRouter
