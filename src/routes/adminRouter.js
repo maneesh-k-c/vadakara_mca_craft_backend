@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const loginData = require('../models/loginSchema');
 const userData = require('../models/userSchema');
 const studentData = require('../models/studentSchema');
+const productData = require('../models/productSchema');
 
 adminRouter.get('/', async (req, res) => {
     res.render('dashboard')
@@ -18,12 +19,12 @@ adminRouter.get('/view-users', async (req, res) => {
     try {
         const users = await userData.aggregate([
             {
-              '$lookup': {
-                'from': 'login_tbs', 
-                'localField': 'login_id', 
-                'foreignField': '_id', 
-                'as': 'login'
-              }
+                '$lookup': {
+                    'from': 'login_tbs',
+                    'localField': 'login_id',
+                    'foreignField': '_id',
+                    'as': 'login'
+                }
             },
             {
                 '$unwind': {
@@ -32,19 +33,19 @@ adminRouter.get('/view-users', async (req, res) => {
             },
             {
                 '$group': {
-                    '_id': '$_id', 
+                    '_id': '$_id',
                     'name': {
                         '$first': '$name'
-                    }, 
+                    },
                     'mobile': {
                         '$first': '$mobile'
-                    }, 
+                    },
                     'address': {
                         '$first': '$address'
-                    }, 
+                    },
                     'status': {
                         '$first': '$login.status'
-                    }, 
+                    },
                     'login_id': {
                         '$first': '$login._id'
                     },
@@ -53,59 +54,59 @@ adminRouter.get('/view-users', async (req, res) => {
                     }
                 }
             }
-          ])
-          if(users[0]){
+        ])
+        if (users[0]) {
             const data = {}
-            res.render('view-users',{data,users})
-          }else{
+            res.render('view-users', { data, users })
+        } else {
             const data = {
                 Message: 'No data found',
             }
             const users = []
             return res.render('view-turf', { users, data })
-          }
-          
+        }
+
     } catch (error) {
-        
+
     }
-    
+
 })
 
 adminRouter.get('/view-rejected-students', async (req, res) => {
     try {
         const student = await studentData.aggregate([
             {
-              '$lookup': {
-                'from': 'login_tbs', 
-                'localField': 'login_id', 
-                'foreignField': '_id', 
-                'as': 'login'
-              }
+                '$lookup': {
+                    'from': 'login_tbs',
+                    'localField': 'login_id',
+                    'foreignField': '_id',
+                    'as': 'login'
+                }
             },
             {
                 '$unwind': {
                     'path': '$login'
                 }
-            },{
-                '$match':{
-                    'login.status':2
+            }, {
+                '$match': {
+                    'login.status': 2
                 }
             },
             {
                 '$group': {
-                    '_id': '$_id', 
+                    '_id': '$_id',
                     'name': {
                         '$first': '$name'
-                    }, 
+                    },
                     'mobile': {
                         '$first': '$mobile'
-                    }, 
+                    },
                     'address': {
                         '$first': '$address'
-                    }, 
+                    },
                     'status': {
                         '$first': '$login.status'
-                    }, 
+                    },
                     'login_id': {
                         '$first': '$login._id'
                     },
@@ -114,59 +115,59 @@ adminRouter.get('/view-rejected-students', async (req, res) => {
                     }
                 }
             }
-          ])
-          if(student[0]){
+        ])
+        if (student[0]) {
             const data = {}
-            res.render('view-students',{data,student})
-          }else{
+            res.render('view-students', { data, student })
+        } else {
             const data = {
                 Message: 'No data found',
             }
             const student = []
             return res.render('view-students', { student, data })
-          }
-          
+        }
+
     } catch (error) {
-        
+
     }
-    
+
 })
 adminRouter.get('/view-students', async (req, res) => {
     try {
         const student = await studentData.aggregate([
             {
-              '$lookup': {
-                'from': 'login_tbs', 
-                'localField': 'login_id', 
-                'foreignField': '_id', 
-                'as': 'login'
-              }
+                '$lookup': {
+                    'from': 'login_tbs',
+                    'localField': 'login_id',
+                    'foreignField': '_id',
+                    'as': 'login'
+                }
             },
             {
                 '$unwind': {
                     'path': '$login'
                 }
-            },{
-                '$match':{
-                    'login.status':{ '$in': [0, 1] }, 
-                    
+            }, {
+                '$match': {
+                    'login.status': { '$in': [0, 1] },
+
                 }
             },
             {
                 '$group': {
-                    '_id': '$_id', 
+                    '_id': '$_id',
                     'name': {
                         '$first': '$name'
-                    }, 
+                    },
                     'mobile': {
                         '$first': '$mobile'
-                    }, 
+                    },
                     'address': {
                         '$first': '$address'
-                    }, 
+                    },
                     'status': {
                         '$first': '$login.status'
-                    }, 
+                    },
                     'login_id': {
                         '$first': '$login._id'
                     },
@@ -175,27 +176,27 @@ adminRouter.get('/view-students', async (req, res) => {
                     }
                 }
             }
-          ])
-          if(student[0]){
+        ])
+        if (student[0]) {
             const data = {}
-            res.render('view-students',{data,student})
-          }else{
+            res.render('view-students', { data, student })
+        } else {
             const data = {
                 Message: 'No data found',
             }
             const student = []
             return res.render('view-students', { student, data })
-          }
-          
+        }
+
     } catch (error) {
-        
+
     }
-    
+
 })
 
 adminRouter.post('/login', async (req, res, next) => {
     try {
-       
+
         if (req.body.email && req.body.password) {
             const oldUser = await loginData.findOne({
                 email: req.body.email,
@@ -227,7 +228,7 @@ adminRouter.get('/delete-student/:login_id', async (req, res) => {
         const id = req.params.login_id
         const deletedata = await studentData.deleteOne({ login_id: id })
         if (deletedata.deletedCount == 1) {
-            const deletedata = await loginData.deleteOne({_id: id })
+            const deletedata = await loginData.deleteOne({ _id: id })
             return res.redirect('/admin/view-students')
         } else {
             return res.redirect('/admin/view-students')
@@ -277,6 +278,66 @@ adminRouter.get('/reject-student/:login_id', async (req, res) => {
     } catch (error) {
         return res.redirect('/admin/view-rejected-students')
     }
+})
+
+adminRouter.get('/view-works', async (req, res) => {
+    try {
+        const users = await productData.aggregate([
+            {
+                '$lookup': {
+                    'from': 'student_tbs',
+                    'localField': 'login_id',
+                    'foreignField': 'login_id',
+                    'as': 'student'
+                }
+            },
+            {
+                '$unwind': {
+                    'path': '$student'
+                }
+            },
+            {
+                '$group': {
+                    '_id': '$_id',
+                    'product_name': {
+                        '$first': '$product_name'
+                    },
+                    'price': {
+                        '$first': '$price'
+                    },
+                    'description': {
+                        '$first': '$description'
+                    },
+                    'image': {
+                        '$first': '$image'
+                    },
+                    'student_name': {
+                        '$first': '$student.name'
+                    },
+                    'mobile': {
+                        '$first': '$student.mobile'
+                    }
+                }
+            }
+        ])
+        if (users[0]) {
+            // return res.status(200).json({
+            //     data:users
+            // })
+            const data = {}
+            res.render('view-works', { data, users })
+        } else {
+            const data = {
+                Message: 'No data found',
+            }
+            const users = []
+            return res.render('view-works', { users, data })
+        }
+
+    } catch (error) {
+
+    }
+
 })
 
 

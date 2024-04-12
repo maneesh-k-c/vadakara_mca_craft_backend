@@ -158,7 +158,7 @@ studentRouter.get('/delete-product/:id', async (req, res, next) => {
   }
 });
 
-studentRouter.post('/update-product/:product_id', async (req, res, next) => {
+studentRouter.post('/update-product/:product_id',uploadImage.array('image', 1), async (req, res, next) => {
   try {
     const objectId = req.params.product_id;
     const previousData = await productData.findOne({
