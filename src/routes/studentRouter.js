@@ -6,6 +6,7 @@ const { default: mongoose } = require('mongoose');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const orderData = require('../models/orderSchema');
+const studentData = require('../models/studentSchema');
 require('dotenv').config();
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
@@ -202,6 +203,8 @@ studentRouter.post('/update-product/:product_id',uploadImage.array('image', 1), 
   }
 });
 
+
+
 studentRouter.get('/add-highlights/:product_id', async (req, res, next) => {
   try {
     const objectId = req.params.product_id;
@@ -390,4 +393,94 @@ studentRouter.post('/confirm-order/:_id', async (req, res) => {
 }
 );
 
+studentRouter.get('/view-profile/:id', async (req, res) => {
+  try {
+      const user = await studentData.aggregate([
+          {
+              '$lookup': {
+                  'from': 'login_tbs',
+                  'localField': 'login_id',
+                  'foreignField': '_id',
+                  'as': 'result'
+              }
+          }, {
+              '$unwind': {
+                  'path': '$result'
+              }
+          }, {
+              '$match': {
+                  'login_id': new mongoose.Types.ObjectId(req.params.id)
+              }
+          },
+          {
+              '$group': {
+                  '_id': '$_id',
+                  'login_id': { '$first': '$login_id' },
+                  'name': { '$first': '$name' },
+                  'address': { '$first': '$address' },
+                  'mobile': { '$first': '$mobile' },
+                  'academic_year': { '$first': '$academic_year' },
+                  'course_name': { '$first': '$course_name' },
+                  'email': { '$first': '$result.email' },
+              }
+          }
+      ]);
+      if (user) {
+          return res.status(200).json({
+              Success: true,
+              Error: false,
+              data: user
+          });
+      } else {
+          return res.status(400).json({
+              Success: false,
+              Error: true,
+              data: 'No data found'
+          });
+      }
+  } catch (error) {
+      return res.status(400).json({
+          Success: false,
+          Error: true,
+          data: 'Something went wrong'
+      });
+  }
+
+})
+
+studentRouter.get('/update-profile/:id', async (req, res) => {
+  try {
+      const id = req.params.id
+      const oldData = await studentData.findOne({ login_id: id });
+      let reg = {
+          name: req.query.name ? req.query.name : oldData.name,
+          mobile: req.query.mobile ? req.query.mobile : oldData.mobile,
+          academic_year: req.query.academic_year ? req.query.academic_year : oldData.academic_year,
+          course_name: req.query.course_name ? req.query.course_name : oldData.course_name,
+          stream: req.query.stream ? req.query.stream : oldData.stream
+      };
+      
+      console.log(reg);
+      const update = await studentData.updateOne({ login_id: id }, { $set: reg })
+      if (update.modifiedCount == 1) {
+          return res.status(200).json({
+              Success: true,
+              Error: false,
+              Message: 'Profile updated',
+          });
+      } else {
+          return res.status(400).json({
+              Success: false,
+              Error: true,
+              Message: 'Error while updating profile',
+          });
+      }
+  } catch (error) {
+      return res.status(400).json({
+          Success: false,
+          Error: true,
+          Message: 'Something went wrong!',
+      });
+  }
+})
 module.exports = studentRouter
