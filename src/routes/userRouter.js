@@ -309,6 +309,59 @@ userRouter.post('/order-product/:login_id', async (req, res) => {
     }
 });
 
+userRouter.get('/view-profile/:id', async (req, res) => {
+    try {
+        const user = await userData.aggregate([
+            {
+                '$lookup': {
+                    'from': 'login_tbs',
+                    'localField': 'login_id',
+                    'foreignField': '_id',
+                    'as': 'result'
+                }
+            }, {
+                '$unwind': {
+                    'path': '$result'
+                }
+            }, {
+                '$match': {
+                    'login_id': new mongoose.Types.ObjectId(req.params.id)
+                }
+            },
+            {
+                '$group': {
+                    '_id': '$_id',
+                    'login_id': { '$first': '$login_id' },
+                    'name': { '$first': '$name' },
+                    'address': { '$first': '$address' },
+                    'mobile': { '$first': '$mobile' },
+                    'email': { '$first': '$result.email' },
+                }
+            }
+        ]);
+        if (user) {
+            return res.status(200).json({
+                Success: true,
+                Error: false,
+                data: user
+            });
+        } else {
+            return res.status(400).json({
+                Success: false,
+                Error: true,
+                data: 'No data found'
+            });
+        }
+    } catch (error) {
+        return res.status(400).json({
+            Success: false,
+            Error: true,
+            data: 'Something went wrong'
+        });
+    }
+  
+  })
+
 
 
 module.exports = userRouter
