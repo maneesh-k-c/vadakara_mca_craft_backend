@@ -62,7 +62,7 @@ userRouter.post('/update-user-profile/:id', async (req, res) => {
             Message: 'Something went wrong!',
         });
     }
-})
+}) 
 
 userRouter.post('/add-to-cart/:login_id/:product_id', async (req, res) => {
     try {
@@ -360,7 +360,84 @@ userRouter.get('/view-profile/:id', async (req, res) => {
         });
     }
   
-  })
+})
+
+userRouter.get('/view-cart-confirmed/:id', async (req, res) => {
+    try {
+        const product = await orderData.aggregate([
+            {
+                '$lookup': {
+                    'from': 'product_tbs',
+                    'localField': 'product_id',
+                    'foreignField': '_id',
+                    'as': 'product'
+                }
+            },
+            {
+                '$unwind': '$product'
+            },
+            {
+                '$match': {
+                    'login_id': new mongoose.Types.ObjectId(req.params.id)
+                }
+            },
+            {
+                '$match': {
+                    'status': 'Confirmed'
+                }
+            },
+            {
+                '$group': {
+                    '_id': '$_id',
+                    'image': {
+                        '$first': {
+                            '$cond': {
+                                if: { '$ne': ['$product.image', null] },
+                                then: '$product.image',
+                                else: 'default_image_url',
+                            },
+                        },
+                    },
+                    'quantity': { '$first': '$quantity' },
+                    'total': { '$first': '$total' },
+                    'product_name': { '$first': '$product.product_name' },
+                    'description': { '$first': '$product.description' },
+                    'product_id': { '$first': '$product_id' },
+                    'status': { '$first': '$status' },
+                }
+            }
+        ])
+        console.log(product);
+        if (product[0]) {
+            var total = 0
+            product.forEach((item) => {
+                total += Number(item.total);
+            });
+            return res.status(200).json({
+                totalAmount: total,
+                Success: true,
+                Error: false,
+                data: product,
+            });
+
+        } else {
+            return res.status(400).json({
+                Success: false,
+                Error: true,
+                data: 'No data found'
+            });
+        }
+    } catch (error) {
+        return res.status(400).json({
+            Success: false,
+            Error: true,
+            data: 'Something went wrong'
+        });
+    }
+
+})
+
+
 
 
 
