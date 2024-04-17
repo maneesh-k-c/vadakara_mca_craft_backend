@@ -462,6 +462,7 @@ studentRouter.get('/update-profile/:id', async (req, res) => {
       
       console.log(reg);
       const update = await studentData.updateOne({ login_id: id }, { $set: reg })
+      console.log(update);
       if (update.modifiedCount == 1) {
           return res.status(200).json({
               Success: true,
