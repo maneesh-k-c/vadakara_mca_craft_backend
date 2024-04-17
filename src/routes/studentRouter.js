@@ -448,16 +448,16 @@ studentRouter.get('/view-profile/:id', async (req, res) => {
 
 })
 
-studentRouter.get('/update-profile/:id', async (req, res) => {
+studentRouter.post('/update-profile/:id', async (req, res) => {
   try {
       const id = req.params.id
       const oldData = await studentData.findOne({ login_id: id });
       let reg = {
-          name: req.query.name ? req.query.name : oldData.name,
-          mobile: req.query.mobile ? req.query.mobile : oldData.mobile,
-          academic_year: req.query.academic_year ? req.query.academic_year : oldData.academic_year,
-          course_name: req.query.course_name ? req.query.course_name : oldData.course_name,
-          stream: req.query.stream ? req.query.stream : oldData.stream
+          name: req.body.name ? req.body.name : oldData.name,
+          mobile: req.body.mobile ? req.body.mobile : oldData.mobile,
+          academic_year: req.body.academic_year ? req.body.academic_year : oldData.academic_year,
+          course_name: req.body.course_name ? req.body.course_name : oldData.course_name,
+          stream: req.body.stream ? req.body.stream : oldData.stream
       };
       
       console.log(reg);
