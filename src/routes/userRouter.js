@@ -4,6 +4,7 @@ const productData = require('../models/productSchema');
 const userData = require('../models/userSchema');
 const orderData = require('../models/orderSchema');
 const { default: mongoose } = require('mongoose');
+const complaintData = require('../models/complaintSchema');
 
 userRouter.get('/view-product-highlights/', async (req, res, next) => {
     try {
@@ -436,6 +437,148 @@ userRouter.get('/view-cart-confirmed/:id', async (req, res) => {
     }
 
 })
+
+userRouter.post('/add-complaint', async (req, res, next) => {
+    try {
+
+        let details = { 
+             login_id: req.body.login_id,
+             product_id: req.body.product_id,
+             complaint: req.body.complaint, 
+             title: req.body.title, 
+             reply: '', 
+             status: 0 
+            };
+        const result2 = await complaintData(details).save();
+
+        if (result2) {
+            return res.json({
+                Success: true,
+                Error: false,
+                data: result2,
+                Message: 'Complaint added',
+            });
+        } else {
+            return res.json({
+                Success: false,
+                Error: true,
+                Message: 'Failed to add complaint',
+            });
+        }
+    } catch (error) {
+        return res.json({
+            Success: false,
+            Error: true,
+            Message: 'Something went wrong',
+        });
+    }
+});
+
+userRouter.get('/view-complaint/:id', async (req, res) => {
+    try {
+        const booking = await complaintData.aggregate([
+            {
+                '$lookup': {
+                    'from': 'product_tbs',
+                    'localField': 'product_id',
+                    'foreignField': '_id',
+                    'as': 'product'
+                }
+            },
+            {
+                '$lookup': {
+                    'from': 'user_tbs',
+                    'localField': 'login_id',
+                    'foreignField': '_id',
+                    'as': 'user'
+                }
+            },
+             {
+                '$unwind': {
+                    'path': '$product'
+                }
+            },{
+                '$unwind': {
+                    'path': '$user'
+                }
+            }, {
+                '$match': {
+                    'product.login_id': new mongoose.Types.ObjectId(req.params.id)
+                }
+            },
+            {
+                '$group': {
+                    '_id': '$_id',
+                    'name': { '$first': '$user.name' },
+                    'title': { '$first': '$title' },
+                    'complaint': { '$first': '$complaint' },
+                    'reply': { '$first': '$reply' },
+                }
+            }
+        ]);
+        if (booking) {
+            return res.status(200).json({
+                Success: true,
+                Error: false,
+                data: booking
+            });
+        } else {
+            return res.status(400).json({
+                Success: false,
+                Error: true,
+                data: 'No data found'
+            });
+        }
+    } catch (error) {
+        return res.status(400).json({
+            Success: false,
+            Error: true,
+            data: 'Something went wrong'
+        });
+    }
+
+})
+
+userRouter.post('//:_id', async (req, res) => {
+    try {
+        const id = req.params._id;
+        const quantity = req.body.quantity;
+        const existingProduct = await orderData.findOne({
+            _id: id,
+        });
+        const pro = await productData.findOne({ _id: existingProduct.product_id })
+        const sub = Number(quantity) * Number(pro.price)
+        console.log(sub);
+        const updatedData = await orderData.updateOne(
+            { _id: id },
+
+            { $set: { quantity: quantity, total: sub } }
+        );
+
+        if (updatedData) {
+            return res.status(200).json({
+                Success: true,
+                Error: false,
+                data: updatedData,
+                Message: 'cart updated successfully',
+            });
+        } else {
+            return res.status(400).json({
+                Success: false,
+                Error: true,
+                Message: 'Cart update failed',
+            });
+        }
+    } catch (error) {
+        return res.status(500).json({
+            Success: false,
+            Error: true,
+            Message: 'Internal Server error',
+            ErrorMessage: error.message,
+        });
+    }
+}
+);
 
 
 
