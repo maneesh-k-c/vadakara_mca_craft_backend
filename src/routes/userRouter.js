@@ -5,6 +5,7 @@ const userData = require('../models/userSchema');
 const orderData = require('../models/orderSchema');
 const { default: mongoose } = require('mongoose');
 const complaintData = require('../models/complaintSchema');
+const feedbackData = require('../models/feedbackSchema');
 
 userRouter.get('/view-product-highlights/', async (req, res, next) => {
     try {
@@ -289,14 +290,15 @@ userRouter.post('/order-product/:login_id', async (req, res) => {
                 console.log('newquantity',newquantity);
                 const updateProduct = await productData.updateOne({ _id: old_id }, { quantity: newquantity })
                 const update = await orderData.updateOne({ _id: old_id }, { status: "orderPlaced" })
-                if (update.modifiedCount == 1) {
-                    return res.status(200).json({
-                        Success: true,
-                        Error: false,
-                        Message: 'Order placed',
-                    });
-                }
+                
             }
+           
+                return res.status(200).json({
+                    Success: true,
+                    Error: false,
+                    Message: 'Order placed',
+                });
+            
         }
         else {
             return res.status(400).json({
@@ -586,39 +588,113 @@ userRouter.get('/view-complaint/:id', async (req, res) => {
 // }
 // );
 
-// userRouter.post('/add-feedback', async (req, res, next) => {
-//     try {
+userRouter.post('/add-feedback', async (req, res, next) => {
+    try {
 
-//         let details = {
-//             login_id: req.body.login_id,
-//             product_id: req.body.product_id,
-//             feedback: req.body.feedback,
-//             reply: '',
-//         };
-//         const result2 = await complaintData(details).save();
+        let details = {
+            login_id: req.body.login_id,
+            product_id: req.body.product_id,
+            feedback: req.body.feedback,
+            reply: '',
+        };
+        const result2 = await feedbackData(details).save();
 
-//         if (result2) {
-//             return res.json({
-//                 Success: true,
-//                 Error: false,
-//                 data: result2,
-//                 Message: 'Complaint added',
-//             });
-//         } else {
-//             return res.json({
-//                 Success: false,
-//                 Error: true,
-//                 Message: 'Failed to add complaint',
-//             });
-//         }
-//     } catch (error) {
-//         return res.json({
-//             Success: false,
-//             Error: true,
-//             Message: 'Something went wrong',
-//         });
-//     }
-// });
+        if (result2) {
+            return res.json({
+                Success: true,
+                Error: false,
+                data: result2,
+                Message: 'Feedback added',
+            });
+        } else {
+            return res.json({
+                Success: false,
+                Error: true,
+                Message: 'Failed to add feedback',
+            });
+        }
+    } catch (error) {
+        return res.json({
+            Success: false,
+            Error: true,
+            Message: 'Something went wrong',
+        });
+    }
+});
+
+userRouter.get('/view-feedback/:id', async (req, res) => {
+    try {
+        const feedback = await feedbackData.aggregate([
+            {
+                '$lookup': {
+                    'from': 'product_tbs',
+                    'localField': 'product_id',
+                    'foreignField': '_id',
+                    'as': 'product'
+                }
+            },
+            {
+                '$lookup': {
+                    'from': 'user_tbs',
+                    'localField': 'login_id',
+                    'foreignField': 'login_id',
+                    'as': 'user'
+                }
+            },
+            {
+                '$lookup': {
+                    'from': 'student_tbs',
+                    'localField': 'product.login_id',
+                    'foreignField': 'login_id',
+                    'as': 'student'
+                }
+            },  {
+                '$unwind': {
+                    'path': '$product'
+                }
+            },{
+                '$unwind': {
+                    'path': '$student'
+                }
+            }, {
+                '$unwind': {
+                    'path': '$user'
+                }
+            }, {
+                '$match': {
+                    'product.login_id': new mongoose.Types.ObjectId(req.params.id)
+                }
+            },
+            {
+                '$group': {
+                    '_id': '$_id',
+                    'name': { '$first': '$user.name' },
+                    'feedback': { '$first': '$feedback' },
+                }
+            }
+        ]);
+        if (feedback) {
+            return res.status(200).json({
+                Success: true,
+                Error: false,
+                data: feedback
+            });
+        } else {
+            return res.status(400).json({
+                Success: false,
+                Error: true,
+                data: 'No data found'
+            });
+        }
+    } catch (error) {
+        return res.status(400).json({
+            Success: false,
+            Error: true,
+            data: 'Something went wrong'
+        });
+    }
+
+})
 
 
 
