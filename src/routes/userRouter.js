@@ -278,7 +278,7 @@ userRouter.post('/order-product/:login_id', async (req, res) => {
             status: 'pending',
             login_id: login_id,
         });
-        console.log(existingProduct);
+        console.log('existingProduct',existingProduct);
         const datas = [];
         if (existingProduct[0]) {
             for (let i = 0; i < existingProduct.length; i++) {
@@ -286,6 +286,7 @@ userRouter.post('/order-product/:login_id', async (req, res) => {
                 const product_id = existingProduct[i].product_id
                 const oldQuantity = await productData.findOne({ _id: product_id })
                 const newquantity = Number(oldQuantity.quantity) - Number(existingProduct[i].quantity)
+                console.log('newquantity',newquantity);
                 const updateProduct = await productData.updateOne({ _id: old_id }, { quantity: newquantity })
                 const update = await orderData.updateOne({ _id: old_id }, { status: "orderPlaced" })
                 if (update.modifiedCount == 1) {
@@ -544,46 +545,80 @@ userRouter.get('/view-complaint/:id', async (req, res) => {
 
 })
 
-userRouter.post('//:_id', async (req, res) => {
-    try {
-        const id = req.params._id;
-        const quantity = req.body.quantity;
-        const existingProduct = await orderData.findOne({
-            _id: id,
-        });
-        const pro = await productData.findOne({ _id: existingProduct.product_id })
-        const sub = Number(quantity) * Number(pro.price)
-        console.log(sub);
-        const updatedData = await orderData.updateOne(
-            { _id: id },
+// userRouter.post('//:_id', async (req, res) => {
+//     try {
+//         const id = req.params._id;
+//         const quantity = req.body.quantity;
+//         const existingProduct = await orderData.findOne({
+//             _id: id,
+//         });
+//         const pro = await productData.findOne({ _id: existingProduct.product_id })
+//         const sub = Number(quantity) * Number(pro.price)
+//         console.log(sub);
+//         const updatedData = await orderData.updateOne(
+//             { _id: id },
 
-            { $set: { quantity: quantity, total: sub } }
-        );
+//             { $set: { quantity: quantity, total: sub } }
+//         );
 
-        if (updatedData) {
-            return res.status(200).json({
-                Success: true,
-                Error: false,
-                data: updatedData,
-                Message: 'cart updated successfully',
-            });
-        } else {
-            return res.status(400).json({
-                Success: false,
-                Error: true,
-                Message: 'Cart update failed',
-            });
-        }
-    } catch (error) {
-        return res.status(500).json({
-            Success: false,
-            Error: true,
-            Message: 'Internal Server error',
-            ErrorMessage: error.message,
-        });
-    }
-}
-);
+//         if (updatedData) {
+//             return res.status(200).json({
+//                 Success: true,
+//                 Error: false,
+//                 data: updatedData,
+//                 Message: 'cart updated successfully',
+//             });
+//         } else {
+//             return res.status(400).json({
+//                 Success: false,
+//                 Error: true,
+//                 Message: 'Cart update failed',
+//             });
+//         }
+//     } catch (error) {
+//         return res.status(500).json({
+//             Success: false,
+//             Error: true,
+//             Message: 'Internal Server error',
+//             ErrorMessage: error.message,
+//         });
+//     }
+// }
+// );
+
+// userRouter.post('/add-feedback', async (req, res, next) => {
+//     try {
+
+//         let details = {
+//             login_id: req.body.login_id,
+//             product_id: req.body.product_id,
+//             feedback: req.body.feedback,
+//             reply: '',
+//         };
+//         const result2 = await complaintData(details).save();
+
+//         if (result2) {
+//             return res.json({
+//                 Success: true,
+//                 Error: false,
+//                 data: result2,
+//                 Message: 'Complaint added',
+//             });
+//         } else {
+//             return res.json({
+//                 Success: false,
+//                 Error: true,
+//                 Message: 'Failed to add complaint',
+//             });
+//         }
+//     } catch (error) {
+//         return res.json({
+//             Success: false,
+//             Error: true,
+//             Message: 'Something went wrong',
+//         });
+//     }
+// });
 
 
 
