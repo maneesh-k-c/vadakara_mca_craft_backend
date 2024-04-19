@@ -63,7 +63,7 @@ userRouter.post('/update-user-profile/:id', async (req, res) => {
             Message: 'Something went wrong!',
         });
     }
-}) 
+})
 
 userRouter.post('/add-to-cart/:login_id/:product_id', async (req, res) => {
     try {
@@ -282,14 +282,19 @@ userRouter.post('/order-product/:login_id', async (req, res) => {
         const datas = [];
         if (existingProduct[0]) {
             for (let i = 0; i < existingProduct.length; i++) {
-
                 const old_id = existingProduct[i]._id
+                const product_id = existingProduct[i].product_id
+                const oldQuantity = await productData.findOne({ _id: product_id })
+                const newquantity = Number(oldQuantity.quantity) - Number(existingProduct[i].quantity)
+                const updateProduct = await productData.updateOne({ _id: old_id }, { quantity: newquantity })
                 const update = await orderData.updateOne({ _id: old_id }, { status: "orderPlaced" })
-                return res.status(200).json({
-                    Success: true,
-                    Error: false,
-                    Message: 'Order placed',
-                });
+                if (update.modifiedCount == 1) {
+                    return res.status(200).json({
+                        Success: true,
+                        Error: false,
+                        Message: 'Order placed',
+                    });
+                }
             }
         }
         else {
@@ -360,7 +365,7 @@ userRouter.get('/view-profile/:id', async (req, res) => {
             data: 'Something went wrong'
         });
     }
-  
+
 })
 
 userRouter.get('/view-cart-confirmed/:id', async (req, res) => {
@@ -441,14 +446,14 @@ userRouter.get('/view-cart-confirmed/:id', async (req, res) => {
 userRouter.post('/add-complaint', async (req, res, next) => {
     try {
 
-        let details = { 
-             login_id: req.body.login_id,
-             product_id: req.body.product_id,
-             complaint: req.body.complaint, 
-             title: req.body.title, 
-             reply: '', 
-             status: 0 
-            };
+        let details = {
+            login_id: req.body.login_id,
+            product_id: req.body.product_id,
+            complaint: req.body.complaint,
+            title: req.body.title,
+            reply: '',
+            status: 0
+        };
         const result2 = await complaintData(details).save();
 
         if (result2) {
@@ -493,11 +498,11 @@ userRouter.get('/view-complaint/:id', async (req, res) => {
                     'as': 'user'
                 }
             },
-             {
+            {
                 '$unwind': {
                     'path': '$product'
                 }
-            },{
+            }, {
                 '$unwind': {
                     'path': '$user'
                 }
