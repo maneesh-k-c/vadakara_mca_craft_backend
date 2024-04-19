@@ -451,6 +451,7 @@ studentRouter.get('/view-profile/:id', async (req, res) => {
 studentRouter.post('/update-profile', async (req, res) => {
   try {
       const id = req.body.id
+      console.log(req.body);
       const oldData = await studentData.findOne({ login_id: id });
       let reg = {
           name: req.body.name ? req.body.name : oldData.name,
