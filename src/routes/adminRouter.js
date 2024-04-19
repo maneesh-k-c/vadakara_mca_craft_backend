@@ -6,9 +6,15 @@ const loginData = require('../models/loginSchema');
 const userData = require('../models/userSchema');
 const studentData = require('../models/studentSchema');
 const productData = require('../models/productSchema');
+const orderData = require('../models/orderSchema');
+const complaintData = require('../models/complaintSchema');
 
 adminRouter.get('/', async (req, res) => {
-    res.render('dashboard')
+    const users = await userData.find()
+    const student = await studentData.find()
+    const product = await productData.find()
+    const order = await orderData.find({status:'pending'})
+    res.render('dashboard',{users,student,product,order})
 })
 
 adminRouter.get('/logout', async (req, res) => {
@@ -64,6 +70,73 @@ adminRouter.get('/view-users', async (req, res) => {
             }
             const users = []
             return res.render('view-turf', { users, data })
+        }
+
+    } catch (error) {
+
+    }
+
+})
+
+adminRouter.get('/view-complaints', async (req, res) => {
+    try {
+        const users = await complaintData.aggregate([
+            {
+                '$lookup': {
+                    'from': 'user_tbs',
+                    'localField': 'login_id',
+                    'foreignField': 'login_id',
+                    'as': 'user'
+                }
+            },
+            {
+                '$lookup': {
+                    'from': 'product_tbs',
+                    'localField': 'product_id',
+                    'foreignField': '_id',
+                    'as': 'product'
+                }
+            },
+            {
+                '$unwind': {
+                    'path': '$user'
+                }
+            },
+            {
+                '$unwind': {
+                    'path': '$product'
+                }
+            },
+            {
+                '$group': {
+                    '_id': '$_id',
+                    'name': {
+                        '$first': '$user.name'
+                    },
+                    'complaint': {
+                        '$first': '$complaint'
+                    },
+                    'title': {
+                        '$first': '$title'
+                    },
+                    'product': {
+                        '$first': '$product.product_name'
+                    },
+                    'image': {
+                        '$first': '$product.image'
+                    }
+                }
+            }
+        ])
+        if (users[0]) {
+            const data = {}
+            res.render('view-complaints', { data, users })
+        } else {
+            const data = {
+                Message: 'No data found',
+            }
+            const users = []
+            return res.render('view-complaints', { users, data })
         }
 
     } catch (error) {
