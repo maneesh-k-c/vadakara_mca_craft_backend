@@ -697,6 +697,99 @@ userRouter.get('/view-feedback/:id', async (req, res) => {
 })
 
 
+userRouter.post('/reply-complaint', async (req, res) => {
+    try {
+        const id = req.body._id
+       
+        const update = await complaintData.updateOne({ _id: id }, { $set: {reply:req.body.reply} })
+        if (update.modifiedCount == 1) {
+            return res.status(200).json({
+                Success: true,
+                Error: false,
+                Message: 'Reply added',
+            });
+        } else {
+            return res.status(400).json({
+                Success: false,
+                Error: true,
+                Message: 'Error while adding reply',
+            });
+        }
+    } catch (error) {
+        return res.status(400).json({
+            Success: false,
+            Error: true,
+            Message: 'Something went wrong!',
+        });
+    }
+})
+
+userRouter.get('/view-complaint-user/:id', async (req, res) => {
+    try {
+        const booking = await complaintData.aggregate([
+            {
+                '$lookup': {
+                    'from': 'product_tbs',
+                    'localField': 'product_id',
+                    'foreignField': '_id',
+                    'as': 'product'
+                }
+            },
+            {
+                '$lookup': {
+                    'from': 'user_tbs',
+                    'localField': 'login_id',
+                    'foreignField': '_id',
+                    'as': 'user'
+                }
+            },
+            {
+                '$unwind': {
+                    'path': '$product'
+                }
+            }, {
+                '$unwind': {
+                    'path': '$user'
+                }
+            }, {
+                '$match': {
+                    'login_id': new mongoose.Types.ObjectId(req.params.id)
+                }
+            },
+            {
+                '$group': {
+                    '_id': '$_id',
+                    'name': { '$first': '$user.name' },
+                    'title': { '$first': '$title' },
+                    'complaint': { '$first': '$complaint' },
+                    'reply': { '$first': '$reply' },
+                }
+            }
+        ]);
+        if (booking) {
+            return res.status(200).json({
+                Success: true,
+                Error: false,
+                data: booking
+            });
+        } else {
+            return res.status(400).json({
+                Success: false,
+                Error: true,
+                data: 'No data found'
+            });
+        }
+    } catch (error) {
+        return res.status(400).json({
+            Success: false,
+            Error: true,
+            data: 'Something went wrong'
+        });
+    }
+
+})
+
+
 
 
 
