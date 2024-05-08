@@ -739,7 +739,7 @@ userRouter.get('/view-complaint-user/:id', async (req, res) => {
                 '$lookup': {
                     'from': 'user_tbs',
                     'localField': 'login_id',
-                    'foreignField': '_id',
+                    'foreignField': 'login_id',
                     'as': 'user'
                 }
             },
@@ -751,7 +751,8 @@ userRouter.get('/view-complaint-user/:id', async (req, res) => {
                 '$unwind': {
                     'path': '$user'
                 }
-            }, {
+            }, 
+            {
                 '$match': {
                     'login_id': new mongoose.Types.ObjectId(req.params.id)
                 }
