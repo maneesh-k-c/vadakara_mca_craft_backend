@@ -7,6 +7,7 @@ const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const orderData = require('../models/orderSchema');
 const studentData = require('../models/studentSchema');
+const complaintData = require('../models/complaintSchema');
 require('dotenv').config();
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
@@ -484,5 +485,87 @@ studentRouter.post('/update-profile', async (req, res) => {
           Message: 'Something went wrong!',
       });
   }
+})
+
+studentRouter.get('/view-complaint-student/:id', async (req, res) => {
+  try {
+    console.log(req.params.id);
+      const booking = await complaintData.aggregate([
+          {
+              '$lookup': {
+                  'from': 'product_tbs',
+                  'localField': 'product_id',
+                  'foreignField': '_id',
+                  'as': 'product'
+              }
+          },
+          {
+              '$lookup': {
+                  'from': 'student_tbs',
+                  'localField': 'product.login_id',
+                  'foreignField': 'login_id',
+                  'as': 'student'
+              }
+          },
+          {
+              '$lookup': {
+                  'from': 'user_tbs',
+                  'localField': 'login_id',
+                  'foreignField': 'login_id',
+                  'as': 'user'
+              }
+          },
+          {
+              '$unwind': {
+                  'path': '$product'
+              }
+          }, 
+          {
+              '$unwind': {
+                  'path': '$student'
+              }
+          }, 
+          {
+              '$unwind': {
+                  'path': '$user'
+              }
+          }, 
+          {
+              '$match': {
+                  'product.login_id': new mongoose.Types.ObjectId(req.params.id)
+              }
+          },
+          {
+              '$group': {
+                  '_id': '$_id',
+                  'name': { '$first': '$user.name' },
+                  'title': { '$first': '$title' },
+                  'product':{'$first':'$product.product_name'},
+                  'complaint': { '$first': '$complaint' },
+                  'reply': { '$first': '$reply' },
+              }
+          }
+      ]);
+      if (booking) {
+          return res.status(200).json({
+              Success: true,
+              Error: false,
+              data: booking
+          });
+      } else {
+          return res.status(400).json({
+              Success: false,
+              Error: true,
+              data: 'No data found'
+          });
+      }
+  } catch (error) {
+      return res.status(400).json({
+          Success: false,
+          Error: true,
+          data: 'Something went wrong'
+      });
+  }
+
 })
 module.exports = studentRouter
