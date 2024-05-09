@@ -8,6 +8,7 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const orderData = require('../models/orderSchema');
 const studentData = require('../models/studentSchema');
 const complaintData = require('../models/complaintSchema');
+const feedbackData = require('../models/feedbackSchema');
 require('dotenv').config();
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
@@ -542,6 +543,87 @@ studentRouter.get('/view-complaint-student/:id', async (req, res) => {
                   'title': { '$first': '$title' },
                   'product':{'$first':'$product.product_name'},
                   'complaint': { '$first': '$complaint' },
+                  'reply': { '$first': '$reply' },
+              }
+          }
+      ]);
+      if (booking) {
+          return res.status(200).json({
+              Success: true,
+              Error: false,
+              data: booking
+          });
+      } else {
+          return res.status(400).json({
+              Success: false,
+              Error: true,
+              data: 'No data found'
+          });
+      }
+  } catch (error) {
+      return res.status(400).json({
+          Success: false,
+          Error: true,
+          data: 'Something went wrong'
+      });
+  }
+
+})
+
+studentRouter.get('/view-feedback-student/:id', async (req, res) => {
+  try {
+    console.log(req.params.id);
+      const booking = await feedbackData.aggregate([
+          {
+              '$lookup': {
+                  'from': 'product_tbs',
+                  'localField': 'product_id',
+                  'foreignField': '_id',
+                  'as': 'product'
+              }
+          },
+          {
+              '$lookup': {
+                  'from': 'student_tbs',
+                  'localField': 'product.login_id',
+                  'foreignField': 'login_id',
+                  'as': 'student'
+              }
+          },
+          {
+              '$lookup': {
+                  'from': 'user_tbs',
+                  'localField': 'login_id',
+                  'foreignField': 'login_id',
+                  'as': 'user'
+              }
+          },
+          {
+              '$unwind': {
+                  'path': '$product'
+              }
+          }, 
+          {
+              '$unwind': {
+                  'path': '$student'
+              }
+          }, 
+          {
+              '$unwind': {
+                  'path': '$user'
+              }
+          }, 
+          {
+              '$match': {
+                  'product.login_id': new mongoose.Types.ObjectId(req.params.id)
+              }
+          },
+          {
+              '$group': {
+                  '_id': '$_id',
+                  'name': { '$first': '$user.name' },
+                  'product':{'$first':'$product.product_name'},
+                  'feedback': { '$first': '$feedback' },
                   'reply': { '$first': '$reply' },
               }
           }
