@@ -10,6 +10,7 @@ const LoginRouter = require('./src/routes/loginRouter');
 
 require('dotenv').config();
 app.use(express.static('./public'))
+app.use(cors())
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
